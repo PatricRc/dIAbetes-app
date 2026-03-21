@@ -1,0 +1,1031 @@
+{
+    "meta": {
+        "name": "Playful Editorial Mobile Design System",
+        "version": "1.0.0",
+        "description": "A highly detailed mobile-first design system inspired by playful pastel app interfaces, expressive emotional widgets, editorial typography, rounded cards, bold modular layouts, and soft high-contrast UI patterns.",
+        "platforms": [
+            "iOS",
+            "Android",
+            "Web responsive"
+        ],
+        "designPrinciples": [
+            "Playful but usable",
+            "Editorial hierarchy over dense dashboards",
+            "Soft pastel surfaces with strong black anchors",
+            "Large typography and simple blocks",
+            "Rounded geometry and tactile affordances",
+            "One primary action per view",
+            "Emotional and human-centered interaction",
+            "Visual storytelling through color-coded modules"
+        ],
+        "recommendedUseCases": [
+            "Wellness apps",
+            "Mood tracking apps",
+            "Pet care apps",
+            "Event planning apps",
+            "Lifestyle apps",
+            "Habit tracking apps",
+            "AI-guided personal assistant apps"
+        ]
+    },
+    "brandFoundation": {
+        "brandPersonality": {
+            "tone": [
+                "friendly",
+                "optimistic",
+                "calm",
+                "expressive",
+                "playful",
+                "modern"
+            ],
+            "keywords": [
+                "soft",
+                "curated",
+                "editorial",
+                "joyful",
+                "modular",
+                "human",
+                "intuitive"
+            ]
+        },
+        "visualLanguage": {
+            "coreTraits": [
+                "Pastel blocks",
+                "Large rounded containers",
+                "Soft backgrounds",
+                "Playful sticker-like UI elements",
+                "High contrast black navigation anchors",
+                "Big headlines with lots of breathing room",
+                "Cards used as primary information units",
+                "Simple charts and mini visual summaries"
+            ],
+            "avoid": [
+                "Overly corporate gradients everywhere",
+                "Tiny dense text",
+                "Heavy skeuomorphism",
+                "Sharp corners",
+                "Too many competing CTA buttons",
+                "Complex data tables on mobile",
+                "Dark borders on every card"
+            ]
+        }
+    },
+    "designTokens": {
+        "color": {
+            "neutral": {
+                "bgPrimary": "#F5EFE8",
+                "bgSecondary": "#FFF9F4",
+                "surfacePrimary": "#FFFFFF",
+                "surfaceSoft": "#F7F2EC",
+                "surfaceMuted": "#EEE8E1",
+                "lineSoft": "#E5DDD3",
+                "textPrimary": "#111111",
+                "textSecondary": "#4A4A4A",
+                "textMuted": "#7B7B7B",
+                "textInverse": "#FFFFFF",
+                "blackAnchor": "#0A0A0A"
+            },
+            "pastel": {
+                "yellowSoft": "#F4DD75",
+                "yellowBright": "#F7E56C",
+                "pinkSoft": "#EEC0D8",
+                "pinkBright": "#F68AC8",
+                "greenSoft": "#CFE1A8",
+                "greenBright": "#B8E986",
+                "blueSoft": "#BCD0F3",
+                "blueBright": "#8ECDF3",
+                "purpleSoft": "#CDB8F4",
+                "orangeSoft": "#F6C29B",
+                "mintSoft": "#BFE8D9"
+            },
+            "semantic": {
+                "success": "#88D66C",
+                "warning": "#F7D154",
+                "error": "#F26D6D",
+                "info": "#7EC8F8"
+            },
+            "categoryExamples": {
+                "moodLove": "#F68AC8",
+                "moodCalm": "#CDB8F4",
+                "moodEnergy": "#F7D154",
+                "moodStress": "#F6A36F",
+                "petHealth": "#EEC0D8",
+                "petNutrition": "#BCD0F3",
+                "petTraining": "#CFE1A8",
+                "eventsDiscovery": "#F4DD75"
+            }
+        },
+        "typography": {
+            "fontFamilies": {
+                "display": "SF Pro Display, Inter, system-ui, sans-serif",
+                "body": "SF Pro Text, Inter, system-ui, sans-serif",
+                "accent": "A modern grotesk or neo-grotesk with optional italic companion"
+            },
+            "weights": {
+                "regular": 400,
+                "medium": 500,
+                "semibold": 600,
+                "bold": 700,
+                "black": 800
+            },
+            "scale": {
+                "displayXL": {
+                    "fontSize": 40,
+                    "lineHeight": 42,
+                    "letterSpacing": -1.2
+                },
+                "displayL": {
+                    "fontSize": 32,
+                    "lineHeight": 36,
+                    "letterSpacing": -0.8
+                },
+                "headingXL": {
+                    "fontSize": 28,
+                    "lineHeight": 32,
+                    "letterSpacing": -0.5
+                },
+                "headingL": {
+                    "fontSize": 24,
+                    "lineHeight": 28,
+                    "letterSpacing": -0.4
+                },
+                "headingM": {
+                    "fontSize": 20,
+                    "lineHeight": 24,
+                    "letterSpacing": -0.2
+                },
+                "bodyL": {
+                    "fontSize": 17,
+                    "lineHeight": 24,
+                    "letterSpacing": -0.1
+                },
+                "bodyM": {
+                    "fontSize": 15,
+                    "lineHeight": 21,
+                    "letterSpacing": 0
+                },
+                "bodyS": {
+                    "fontSize": 13,
+                    "lineHeight": 18,
+                    "letterSpacing": 0.1
+                },
+                "caption": {
+                    "fontSize": 11,
+                    "lineHeight": 14,
+                    "letterSpacing": 0.2
+                }
+            },
+            "usage": {
+                "heroTitle": "displayXL or displayL",
+                "sectionTitle": "headingXL or headingL",
+                "cardTitle": "headingM",
+                "bodyText": "bodyM or bodyL",
+                "metaInfo": "bodyS or caption",
+                "tabLabels": "bodyS medium"
+            }
+        },
+        "spacing": {
+            "baseUnit": 4,
+            "scale": {
+                "0": 0,
+                "1": 4,
+                "2": 8,
+                "3": 12,
+                "4": 16,
+                "5": 20,
+                "6": 24,
+                "7": 28,
+                "8": 32,
+                "10": 40,
+                "12": 48,
+                "14": 56,
+                "16": 64
+            },
+            "screenPadding": 20,
+            "sectionGap": 24,
+            "cardPadding": 16,
+            "compactCardPadding": 12
+        },
+        "radius": {
+            "xs": 8,
+            "sm": 12,
+            "md": 16,
+            "lg": 20,
+            "xl": 24,
+            "xxl": 32,
+            "pill": 999
+        },
+        "border": {
+            "widthThin": 1,
+            "widthMedium": 1.5,
+            "widthBold": 2,
+            "style": "solid"
+        },
+        "shadow": {
+            "none": {
+                "x": 0,
+                "y": 0,
+                "blur": 0,
+                "spread": 0,
+                "color": "rgba(0,0,0,0)"
+            },
+            "soft": {
+                "x": 0,
+                "y": 6,
+                "blur": 20,
+                "spread": 0,
+                "color": "rgba(0,0,0,0.06)"
+            },
+            "lifted": {
+                "x": 0,
+                "y": 10,
+                "blur": 30,
+                "spread": 0,
+                "color": "rgba(0,0,0,0.10)"
+            }
+        },
+        "motion": {
+            "durationsMs": {
+                "fast": 120,
+                "normal": 220,
+                "slow": 360,
+                "screen": 420
+            },
+            "easing": {
+                "standard": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+                "enter": "cubic-bezier(0.18, 0.9, 0.32, 1)",
+                "exit": "cubic-bezier(0.4, 0.0, 1, 1)"
+            },
+            "principles": [
+                "Micro-bounce for playful controls",
+                "Fade + translate for cards",
+                "Scale-in for sticker elements",
+                "Avoid excessive motion on data screens",
+                "Support reduced motion preferences"
+            ]
+        }
+    },
+    "layoutSystem": {
+        "grid": {
+            "mobile": {
+                "columns": 4,
+                "margin": 20,
+                "gutter": 12
+            },
+            "tablet": {
+                "columns": 8,
+                "margin": 24,
+                "gutter": 16
+            },
+            "desktop": {
+                "columns": 12,
+                "margin": 32,
+                "gutter": 20
+            }
+        },
+        "safeAreas": {
+            "topInsetBehavior": "Respect native safe area with floating top controls",
+            "bottomInsetBehavior": "Bottom navigation sits above inset or merges into dock shape",
+            "floatingElements": [
+                "FAB",
+                "utility button",
+                "AI quick action",
+                "contextual plus button"
+            ]
+        },
+        "compositionRules": [
+            "Use large feature blocks with 1 major idea per section",
+            "Allow asymmetry if balance is preserved",
+            "Mix full-width cards and half-width utility cards",
+            "Use whitespace aggressively",
+            "Limit to 3-5 visible primary modules per screen"
+        ]
+    },
+    "iconography": {
+        "style": {
+            "type": "Rounded line icons mixed with simple filled states",
+            "strokeWidth": 1.75,
+            "cornerStyle": "rounded",
+            "recommendedSize": [
+                16,
+                20,
+                24,
+                28
+            ]
+        },
+        "rules": [
+            "Match icon weight to text weight",
+            "Use filled variant only for active or key emotional states",
+            "Avoid overly detailed icons",
+            "Prefer universal metaphors"
+        ]
+    },
+    "illustrationSystem": {
+        "style": {
+            "approach": "Minimal playful geometric characters and sticker-like forms",
+            "traits": [
+                "Rounded shapes",
+                "Simple eyes or expression marks",
+                "Soft colors",
+                "Flat fills",
+                "Very limited linework"
+            ]
+        },
+        "usage": [
+            "Onboarding",
+            "Empty states",
+            "Mood states",
+            "Pet avatars",
+            "Category cards",
+            "Feature previews"
+        ],
+        "doNotUse": [
+            "Highly realistic 3D art mixed with flat UI",
+            "Generic stock vectors with sharp edges",
+            "Overly shaded mascots"
+        ]
+    },
+    "componentLibrary": {
+        "buttons": {
+            "primary": {
+                "background": "{color.neutral.blackAnchor}",
+                "text": "{color.neutral.textInverse}",
+                "radius": "{radius.pill}",
+                "height": 48,
+                "paddingX": 20,
+                "font": "bodyM medium",
+                "shadow": "{shadow.none}",
+                "states": {
+                    "default": "solid black",
+                    "pressed": "scale 0.98",
+                    "disabled": "opacity 0.4",
+                    "loading": "spinner + preserved width"
+                }
+            },
+            "secondary": {
+                "background": "{color.surfacePrimary}",
+                "text": "{color.neutral.textPrimary}",
+                "border": "1px solid {color.lineSoft}",
+                "radius": "{radius.pill}",
+                "height": 44
+            },
+            "tonal": {
+                "background": "contextual pastel color",
+                "text": "{color.neutral.textPrimary}",
+                "radius": "{radius.pill}",
+                "height": 44
+            },
+            "iconButton": {
+                "size": 40,
+                "radius": "{radius.pill}",
+                "background": "{color.surfacePrimary}",
+                "iconSize": 18
+            },
+            "floatingActionButton": {
+                "size": 56,
+                "background": "{color.surfacePrimary}",
+                "icon": "plus",
+                "shadow": "{shadow.lifted}",
+                "placement": "bottom center or bottom right depending on navigation model"
+            }
+        },
+        "cards": {
+            "baseCard": {
+                "background": "{color.surfacePrimary}",
+                "radius": "{radius.xl}",
+                "padding": "{spacing.cardPadding}",
+                "shadow": "{shadow.soft}"
+            },
+            "pastelCard": {
+                "background": "any pastel token",
+                "radius": "{radius.xl}",
+                "padding": "{spacing.cardPadding}",
+                "shadow": "{shadow.none}"
+            },
+            "summaryCard": {
+                "titleStyle": "headingM",
+                "metaStyle": "bodyS",
+                "actionSlot": true,
+                "supportsMiniChart": true
+            },
+            "stickerCard": {
+                "background": "bright pastel",
+                "rotationDegRange": [
+                    -8,
+                    8
+                ],
+                "radius": "{radius.lg}",
+                "shadow": "{shadow.soft}",
+                "labelStyle": "bodyM medium"
+            }
+        },
+        "navigation": {
+            "bottomNav": {
+                "container": {
+                    "height": 68,
+                    "radiusTop": 24,
+                    "background": "{color.neutral.blackAnchor}"
+                },
+                "item": {
+                    "iconDefault": "outline light",
+                    "iconActive": "filled light",
+                    "labelVisibility": "optional or hidden",
+                    "activeIndicator": "subtle glow or small dot"
+                },
+                "maxItems": 5
+            },
+            "topBar": {
+                "height": 56,
+                "leftSlot": "avatar or back button",
+                "centerSlot": "date, title, or segmented status",
+                "rightSlot": "search, plus, filter"
+            },
+            "floatingUtilityButtons": {
+                "style": "dark rounded square or circular overlay",
+                "useCases": [
+                    "back",
+                    "AI helper",
+                    "search",
+                    "edit",
+                    "context menu"
+                ]
+            }
+        },
+        "inputs": {
+            "searchBar": {
+                "height": 44,
+                "background": "{color.surfacePrimary}",
+                "radius": "{radius.pill}",
+                "placeholderStyle": "bodyM",
+                "iconLeft": "search",
+                "border": "1px solid {color.lineSoft}"
+            },
+            "textField": {
+                "height": 52,
+                "background": "{color.surfacePrimary}",
+                "radius": "{radius.lg}",
+                "labelAbove": true,
+                "helperText": true,
+                "errorState": true
+            },
+            "segmentedControl": {
+                "containerHeight": 36,
+                "radius": "{radius.pill}",
+                "background": "{color.surfaceSoft}",
+                "activeBackground": "{color.surfacePrimary}",
+                "padding": 4
+            },
+            "chip": {
+                "height": 32,
+                "radius": "{radius.pill}",
+                "variants": [
+                    "neutral",
+                    "selected",
+                    "category",
+                    "filter"
+                ],
+                "selectedStyle": "dark text + pastel or black inverse depending on context"
+            }
+        },
+        "lists": {
+            "taskRow": {
+                "heightMin": 56,
+                "leading": "icon or category badge",
+                "title": "bodyM medium",
+                "subtitle": "bodyS",
+                "trailing": "chevron or checkbox"
+            },
+            "calendarStrip": {
+                "dayPillSize": 32,
+                "activeStyle": "filled pastel circle",
+                "inactiveStyle": "text-only or outlined"
+            }
+        },
+        "dataViz": {
+            "miniLineChart": {
+                "style": "simple 1-2 line chart with minimal axes",
+                "lineWeight": 2,
+                "showGrid": false,
+                "focusPoint": true
+            },
+            "barMicroChart": {
+                "style": "rounded bars",
+                "labelDensity": "minimal",
+                "highlightBar": "striped or brighter pastel"
+            },
+            "progressRing": {
+                "strokeWidth": 8,
+                "capStyle": "round",
+                "centerLabel": true
+            },
+            "donut": {
+                "strokeWidth": 10,
+                "legend": "outside or via chips"
+            }
+        },
+        "emotionSelectors": {
+            "moodCarousel": {
+                "cardSize": {
+                    "width": 88,
+                    "height": 116
+                },
+                "activeScale": 1.08,
+                "inactiveScale": 0.92,
+                "labelPosition": "below icon",
+                "supportsGradientGlow": true
+            },
+            "emotionGrid": {
+                "columns": 4,
+                "itemSpacing": 16,
+                "iconStyle": "playful face shapes",
+                "labelStyle": "bodyS medium"
+            }
+        },
+        "petCareModules": {
+            "scheduleCard": {
+                "colorCoding": {
+                    "vet": "{color.pastel.pinkSoft}",
+                    "grooming": "{color.pastel.yellowSoft}",
+                    "medicine": "{color.pastel.blueSoft}",
+                    "vaccination": "{color.pastel.greenSoft}"
+                },
+                "structure": [
+                    "header",
+                    "status marker",
+                    "supporting text",
+                    "date pill",
+                    "doctor or owner badge"
+                ]
+            },
+            "nutritionBlock": {
+                "macroTiles": [
+                    "protein",
+                    "carbs",
+                    "fat"
+                ],
+                "mealChecklist": true,
+                "addMealCTA": true
+            },
+            "activityCalendar": {
+                "dayCell": "small rounded circle",
+                "intensityLegend": [
+                    "Very high",
+                    "High",
+                    "Moderate",
+                    "Low"
+                ]
+            }
+        },
+        "eventModules": {
+            "discoveryBoard": {
+                "heroText": "oversized editorial headline",
+                "floatingStickers": true,
+                "entryAction": "single black CTA"
+            },
+            "eventInsightChart": {
+                "timeAxis": true,
+                "peakMarker": true,
+                "filterChips": true
+            },
+            "dateTimePills": {
+                "iconTop": true,
+                "dayAndTimeDisplay": "stacked"
+            }
+        }
+    },
+    "interactionPatterns": {
+        "globalPatterns": [
+            "Tap on cards opens detail sheet or full screen detail",
+            "Long press opens quick actions",
+            "Horizontal swipe for category sets or mood carousel",
+            "Bottom sheet for secondary actions",
+            "Primary create action always globally accessible"
+        ],
+        "microInteractions": {
+            "buttonPress": {
+                "scale": 0.98,
+                "durationMs": 120
+            },
+            "cardHoverOrFocus": {
+                "lift": 2,
+                "shadow": "soft"
+            },
+            "selection": {
+                "animate": "scale + background fill transition"
+            },
+            "successFeedback": {
+                "mode": "subtle haptic + tiny check animation"
+            }
+        },
+        "gestureSupport": [
+            "Swipe between onboarding or stories",
+            "Drag bottom sheets",
+            "Tap outside to dismiss",
+            "Swipe to archive or complete list items where relevant"
+        ]
+    },
+    "screenArchitecture": {
+        "appShell": {
+            "structure": [
+                "SafeArea",
+                "TopBar",
+                "Scrollable content",
+                "Floating or docked bottom navigation",
+                "Optional FAB"
+            ],
+            "background": "{color.neutral.bgPrimary}"
+        },
+        "recommendedScreens": [
+            {
+                "id": "onboarding_welcome",
+                "purpose": "Introduce app personality and main promise",
+                "layout": [
+                    "large illustration or sticker scene",
+                    "display title",
+                    "one sentence subtitle",
+                    "primary CTA",
+                    "secondary 'save for later' or 'skip'"
+                ]
+            },
+            {
+                "id": "home_dashboard",
+                "purpose": "Main overview with modular cards",
+                "layout": [
+                    "top bar with avatar and utility action",
+                    "hero statement or date context",
+                    "2-5 personalized cards",
+                    "quick actions row",
+                    "bottom nav"
+                ]
+            },
+            {
+                "id": "mood_checkin",
+                "purpose": "Emotional selection flow",
+                "layout": [
+                    "question headline",
+                    "horizontal emotion carousel or grid",
+                    "soft ambient gradient background",
+                    "search field or filters",
+                    "action cards"
+                ]
+            },
+            {
+                "id": "analytics_summary",
+                "purpose": "Show insights in simplified visual way",
+                "layout": [
+                    "headline metric",
+                    "mini chart",
+                    "category filters",
+                    "recommendation card"
+                ]
+            },
+            {
+                "id": "pet_profile",
+                "purpose": "Pet overview and routine",
+                "layout": [
+                    "pet avatar and stats chips",
+                    "schedule modules",
+                    "nutrition snapshot",
+                    "training snapshot"
+                ]
+            },
+            {
+                "id": "calendar_or_event_detail",
+                "purpose": "Show timeline, audience, schedule, and action",
+                "layout": [
+                    "header",
+                    "date/time pills",
+                    "performance or timeline chart",
+                    "actions or RSVP/create"
+                ]
+            },
+            {
+                "id": "task_or_activity_detail",
+                "purpose": "Single content module expanded",
+                "layout": [
+                    "cover color area or illustration",
+                    "title",
+                    "metadata",
+                    "editable checklist or detail sections",
+                    "bottom CTA"
+                ]
+            },
+            {
+                "id": "profile_and_settings",
+                "purpose": "Identity, preferences, connected tools, account",
+                "layout": [
+                    "profile header",
+                    "preference cards",
+                    "notification settings",
+                    "appearance settings",
+                    "AI personalization toggles"
+                ]
+            }
+        ]
+    },
+    "contentStrategy": {
+        "voiceAndCopy": {
+            "style": [
+                "Simple",
+                "warm",
+                "short",
+                "supportive",
+                "non-judgmental"
+            ],
+            "guidelines": [
+                "Use 1-2 short lines for card titles",
+                "Keep instructional copy under 14 words where possible",
+                "Use verbs in CTAs",
+                "Avoid robotic AI wording",
+                "Use friendly prompts"
+            ],
+            "examples": {
+                "homeHero": "Discover, Create, Enjoy",
+                "moodPrompt": "How are you feeling today?",
+                "petSection": "Today’s diet",
+                "eventPrompt": "Activities just for your taste"
+            }
+        },
+        "informationDensity": {
+            "rule": "Show summary first, detail on tap",
+            "cardContentLimit": "One headline, one support line, one action",
+            "screenModuleLimit": "5 primary modules max before scrolling fatigue"
+        }
+    },
+    "theming": {
+        "modes": {
+            "light": {
+                "enabled": true,
+                "primaryUse": "Default for playful pastel aesthetic"
+            },
+            "dark": {
+                "enabled": true,
+                "adaptationRules": [
+                    "Use deep charcoal instead of pure black backgrounds",
+                    "Keep pastel accents but slightly desaturate them",
+                    "Increase text contrast",
+                    "Use lighter cards over dark base"
+                ]
+            }
+        },
+        "themeVariants": [
+            {
+                "name": "Warm Editorial",
+                "baseBg": "#F5EFE8",
+                "accentSet": [
+                    "#F4DD75",
+                    "#EEC0D8",
+                    "#CFE1A8",
+                    "#BCD0F3"
+                ]
+            },
+            {
+                "name": "Soft Wellness",
+                "baseBg": "#FFF7F3",
+                "accentSet": [
+                    "#F9C6D3",
+                    "#F5D7AE",
+                    "#D5C4FF",
+                    "#FCE5F1"
+                ]
+            },
+            {
+                "name": "Playful Pet Care",
+                "baseBg": "#F4E5EE",
+                "accentSet": [
+                    "#F8B7DC",
+                    "#A8E7F7",
+                    "#C7F1A8",
+                    "#F7E375"
+                ]
+            },
+            {
+                "name": "Fresh Nature",
+                "baseBg": "#F6F6EE",
+                "accentSet": [
+                    "#A5D6A7",
+                    "#FFE082",
+                    "#B39DDB",
+                    "#80CBC4"
+                ]
+            }
+        ]
+    },
+    "accessibility": {
+        "principles": [
+            "Never rely on color alone for meaning",
+            "Support dynamic type",
+            "Touch targets minimum 44x44",
+            "Preserve contrast on pastel surfaces",
+            "Offer reduced motion mode",
+            "Provide labels for charts and icons"
+        ],
+        "contrastTargets": {
+            "normalText": "4.5:1",
+            "largeText": "3:1",
+            "interactiveComponents": "3:1 minimum boundary contrast"
+        },
+        "motionAccessibility": {
+            "reducedMotionBehavior": [
+                "Replace bounce with fade",
+                "Remove parallax",
+                "Reduce screen transition distance"
+            ]
+        },
+        "screenReaderSupport": {
+            "requirements": [
+                "Label chips and icons contextually",
+                "Describe charts in summary text",
+                "Read selected mood state and action outcome",
+                "Announce validation and save states"
+            ]
+        }
+    },
+    "aiIntegrationDesign": {
+        "role": "AI should feel like a calm assistant embedded into the app, not a separate intimidating chatbot",
+        "entryPoints": [
+            "Floating helper icon",
+            "Contextual suggestion card",
+            "Smart compose or smart summarize",
+            "Inline recommendation beneath charts or modules"
+        ],
+        "patterns": {
+            "assistiveMode": [
+                "suggest next steps",
+                "summarize trends",
+                "recommend routines",
+                "pre-fill forms",
+                "generate plans"
+            ],
+            "conversationalMode": [
+                "lightweight bottom sheet chat",
+                "follow-up prompts",
+                "quick chips for common actions"
+            ],
+            "trustUX": [
+                "Explain why suggestion is shown",
+                "Allow edit before save",
+                "Show confidence where relevant",
+                "Separate insights from facts"
+            ]
+        }
+    },
+    "technicalImplementationGuide": {
+        "frontendArchitecture": {
+            "recommended": [
+                "Token-driven design system",
+                "Component library with theme provider",
+                "Central spacing and radius tokens",
+                "Semantic color naming instead of screen-specific names"
+            ],
+            "mobileStackExamples": [
+                "SwiftUI with design token layer",
+                "React Native + Tailwind-style token mapping",
+                "Flutter ThemeData + custom component kit"
+            ]
+        },
+        "componentNamingConvention": {
+            "format": "Category/Variant/State/Size",
+            "examples": [
+                "Button/Primary/Default/MD",
+                "Card/Summary/Pastel/LG",
+                "Chip/Filter/Selected/SM",
+                "NavItem/Bottom/Active/MD"
+            ]
+        },
+        "designTokenStructure": {
+            "recommendedKeys": [
+                "color",
+                "typography",
+                "spacing",
+                "radius",
+                "shadow",
+                "motion",
+                "border",
+                "icon"
+            ]
+        }
+    },
+    "figmaStructureRecommendation": {
+        "pages": [
+            "00 Foundations",
+            "01 Tokens",
+            "02 Components",
+            "03 Patterns",
+            "04 Screens",
+            "05 Prototypes",
+            "06 Content and Copy",
+            "07 Accessibility"
+        ],
+        "componentSets": [
+            "Buttons",
+            "Cards",
+            "Chips",
+            "Inputs",
+            "Navigation",
+            "Charts",
+            "Mood selectors",
+            "Pet care modules",
+            "Event modules"
+        ]
+    },
+    "sampleScreenRecipes": {
+        "wellnessMoodHome": {
+            "background": "{color.neutral.bgPrimary}",
+            "topBar": {
+                "left": "avatar",
+                "center": "current date",
+                "right": "add button"
+            },
+            "hero": {
+                "title": "How are you feeling today?",
+                "style": "centered large heading"
+            },
+            "mainModule": {
+                "type": "moodCarousel",
+                "backgroundEffect": "soft blurred gradient glow using pink + peach + lavender"
+            },
+            "secondaryModules": [
+                "searchBar",
+                "quickActionCard: Text my therapist",
+                "quickActionCard: See mood statistics"
+            ],
+            "bottomNav": true
+        },
+        "petCareDashboard": {
+            "background": "#F4E5EE",
+            "sections": [
+                "petHeader",
+                "healthStatsChips",
+                "scheduleCardStack",
+                "nutritionCard",
+                "trainingCalendar",
+                "todayChecklist"
+            ]
+        },
+        "eventDiscoveryHome": {
+            "background": "{color.neutral.bgPrimary}",
+            "hero": {
+                "title": "Activities just for your taste",
+                "style": "large editorial with italic accent"
+            },
+            "content": [
+                "floating sticker cards for event categories",
+                "supporting text",
+                "single CTA button"
+            ]
+        }
+    },
+    "jsonReadyTokensForDev": {
+        "buttonPrimary": {
+            "height": 48,
+            "paddingHorizontal": 20,
+            "borderRadius": 999,
+            "backgroundColor": "#0A0A0A",
+            "textColor": "#FFFFFF",
+            "fontSize": 15,
+            "fontWeight": 600
+        },
+        "cardPastelPink": {
+            "backgroundColor": "#EEC0D8",
+            "borderRadius": 24,
+            "padding": 16,
+            "shadow": "none"
+        },
+        "searchBar": {
+            "height": 44,
+            "borderRadius": 999,
+            "backgroundColor": "#FFFFFF",
+            "borderColor": "#E5DDD3",
+            "borderWidth": 1,
+            "paddingHorizontal": 14
+        },
+        "bottomNav": {
+            "height": 68,
+            "backgroundColor": "#0A0A0A",
+            "borderRadiusTopLeft": 24,
+            "borderRadiusTopRight": 24
+        }
+    },
+    "productAdaptationTemplate": {
+        "replaceTheseValues": {
+            "appName": "YourAppName",
+            "primaryTheme": "Warm Editorial",
+            "mainUseCase": "wellness | pet care | events | habits | AI companion",
+            "primaryAccentColor": "#F68AC8",
+            "secondaryAccentColor": "#F4DD75",
+            "ctaLabelStyle": "friendly verb-based",
+            "aiAssistantName": "optional"
+        },
+        "customizationChecklist": [
+            "Choose one base theme",
+            "Map category colors to your product entities",
+            "Replace mood or pet modules with your own domain modules",
+            "Set your own chart styles and data density",
+            "Define 5-8 core app screens",
+            "Create empty states and onboarding illustrations",
+            "Implement dark mode",
+            "Validate contrast and touch sizes"
+        ]
+    }
+}

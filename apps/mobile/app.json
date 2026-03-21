@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "name": "Diabetes Guardian",
+    "slug": "diabetes-guardian",
+    "version": "1.0.0",
+    "scheme": "diabetes-guardian",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO"
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite que $(PRODUCT_NAME) acceda a tus fotos para adjuntar comida o documentos clínicos.",
+          "cameraPermission": "Permite que $(PRODUCT_NAME) use tu cámara para registrar comidas y documentos.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-document-picker",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Permite que $(PRODUCT_NAME) acceda al micrófono para grabar notas de voz clínicas."
+        }
+      ]
+    ],
+    "extra": {
+      "geminiApiKey": "EXPO_PUBLIC_GEMINI_API_KEY",
+      "pineconeApiKey": "EXPO_PUBLIC_PINECONE_API_KEY",
+      "pineconeIndexHost": "EXPO_PUBLIC_PINECONE_INDEX_HOST",
+      "openaiApiKey": "EXPO_PUBLIC_OPENAI_API_KEY",
+      "supabaseUrl": "EXPO_PUBLIC_SUPABASE_URL",
+      "supabaseAnonKey": "EXPO_PUBLIC_SUPABASE_ANON_KEY"
+    }
+  }
+}

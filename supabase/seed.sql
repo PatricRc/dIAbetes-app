@@ -1,0 +1,2 @@
+-- Seed intentionally minimal.
+-- Domain data should be created through Auth signup plus app flows so RLS is exercised end to end.
