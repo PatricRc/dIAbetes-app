@@ -17,6 +17,16 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+
+// Safe wrapper — useBottomTabBarHeight throws outside a tab navigator (e.g. web SSR)
+function useSafeTabBarHeight() {
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return useBottomTabBarHeight();
+  } catch {
+    return Platform.OS === 'web' ? 0 : 90;
+  }
+}
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import {
@@ -38,7 +48,10 @@ import Svg, {
   Defs,
   Stop,
 } from "react-native-svg";
-import { answerQuestion, whatChanged } from "../services/brains/memoryBrain";
+import {
+  listAssistantMessages,
+  sendAssistantQuestion,
+} from "../services/assistantChatService";
 import { processCapture } from "../services/captureService";
 import { ensurePatientSession } from "../services/patientSessionService";
 import {
@@ -74,51 +87,64 @@ const C = {
   progress: "#111111",
 };
 
+function formatChatTime(value = new Date().toISOString()) {
+  return new Date(value).toLocaleTimeString("es-PE", { hour: "numeric", minute: "2-digit" });
+}
+
+function mapStoredAssistantMessage(message) {
+  return {
+    id: message.id,
+    sender: message.role === "assistant" || message.role === "system" ? "ai" : "user",
+    text: message.content_text,
+    time: formatChatTime(message.created_at),
+    isList: false,
+  };
+}
+
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function AsistenteScreen() {
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = useSafeTabBarHeight();
 
   // Chat
   const [inputText, setInputText] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      id: "1",
-      sender: "user",
-      text: "¿Qué cambió desde mi última visita?",
-      time: "HOY 10:42 AM",
-    },
-    {
-      id: "2",
-      sender: "ai",
-      text: "Desde tu visita del 5/03 han ocurrido estos cambios:",
-      isList: true,
-      time: "HOY 10:42 AM",
-    },
-  ]);
+  const [messages, setMessages] = useState([]);
 
   const scrollViewRef = useRef();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(24)).current;
 
   useEffect(() => {
+    const nativeDriver = Platform.OS !== 'web';
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: nativeDriver }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: nativeDriver }),
     ]).start();
   }, []);
 
   useEffect(() => {
     let isActive = true;
 
-    ensurePatientSession().catch((error) => {
-      if (!isActive) {
-        return;
-      }
+    (async () => {
+      try {
+        const { patientId } = await ensurePatientSession();
+        const chat = await listAssistantMessages(patientId);
 
-      Alert.alert("No se pudo conectar", error.message);
-    });
+        if (!isActive) {
+          return;
+        }
+
+        setMessages(chat.messages.map(mapStoredAssistantMessage));
+        setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: false }), 50);
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+
+        Alert.alert("No se pudo conectar", error.message);
+      }
+    })();
 
     return () => {
       isActive = false;
@@ -136,6 +162,10 @@ export default function AsistenteScreen() {
       }
     };
   }, []);
+
+  // Picker guard — prevents "different document picking in progress" error
+  const isPickingDocumentRef = useRef(false);
+  const isPickingImageRef = useRef(false);
 
   // Modal
   const [activeModal, setActiveModal] = useState(null); // 'audio'|'document'|'food'|'note'
@@ -249,10 +279,11 @@ export default function AsistenteScreen() {
 
       // Pulse animation
       pulseLoopRef.current?.stop();
+      const nativeDriver = Platform.OS !== 'web';
       pulseLoopRef.current = Animated.loop(
         Animated.sequence([
-          Animated.timing(micPulse, { toValue: 1.25, duration: 600, useNativeDriver: true }),
-          Animated.timing(micPulse, { toValue: 1, duration: 600, useNativeDriver: true }),
+          Animated.timing(micPulse, { toValue: 1.25, duration: 600, useNativeDriver: nativeDriver }),
+          Animated.timing(micPulse, { toValue: 1, duration: 600, useNativeDriver: nativeDriver }),
         ])
       );
       pulseLoopRef.current.start();
@@ -339,45 +370,57 @@ export default function AsistenteScreen() {
 
   // ── Document picker ──────────────────────────────────────────────────────────
   const pickDocument = async () => {
-    const picked = await DocumentPicker.getDocumentAsync({
-      type: [
-        "application/pdf",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      ],
-      copyToCacheDirectory: true,
-    });
-    if (!picked.canceled && picked.assets?.[0]) {
-      const asset = picked.assets[0];
-      animateProgress(`Subiendo ${asset.name ?? "archivo"}…`, 1200);
-      setPhase("processing");
-      await new Promise((r) => setTimeout(r, 1200));
-      animateProgress("Extrayendo contenido clínico…", 1400);
-      await new Promise((r) => setTimeout(r, 400));
-      await runCapture(
-        { type: "document", documentUri: asset.uri, documentMime: inferDocumentMimeType(asset) },
-        "document"
-      );
+    if (isPickingDocumentRef.current) return;
+    isPickingDocumentRef.current = true;
+    try {
+      const picked = await DocumentPicker.getDocumentAsync({
+        type: [
+          "application/pdf",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ],
+        copyToCacheDirectory: true,
+      });
+      if (!picked.canceled && picked.assets?.[0]) {
+        const asset = picked.assets[0];
+        animateProgress(`Subiendo ${asset.name ?? "archivo"}…`, 1200);
+        setPhase("processing");
+        await new Promise((r) => setTimeout(r, 1200));
+        animateProgress("Extrayendo contenido clínico…", 1400);
+        await new Promise((r) => setTimeout(r, 400));
+        await runCapture(
+          { type: "document", documentUri: asset.uri, documentMime: inferDocumentMimeType(asset) },
+          "document"
+        );
+      }
+    } finally {
+      isPickingDocumentRef.current = false;
     }
   };
 
   // ── Food / photo ─────────────────────────────────────────────────────────────
   const pickFood = async (source) => {
-    let picked;
-    if (source === "camera") {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permiso necesario", "Necesitamos acceso a tu cámara.");
-        return;
+    if (isPickingImageRef.current) return;
+    isPickingImageRef.current = true;
+    try {
+      let picked;
+      if (source === "camera") {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert("Permiso necesario", "Necesitamos acceso a tu cámara.");
+          return;
+        }
+        picked = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.85 });
+      } else {
+        picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.85 });
       }
-      picked = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.85 });
-    } else {
-      picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.85 });
-    }
-    if (!picked.canceled && picked.assets?.[0]) {
-      animateProgress("Identificando alimentos con Gemini Vision…", 1600);
-      setPhase("processing");
-      await new Promise((r) => setTimeout(r, 400));
-      await runCapture({ type: "meal_photo", imageUri: picked.assets[0].uri }, "food");
+      if (!picked.canceled && picked.assets?.[0]) {
+        animateProgress("Identificando alimentos con Gemini Vision…", 1600);
+        setPhase("processing");
+        await new Promise((r) => setTimeout(r, 400));
+        await runCapture({ type: "meal_photo", imageUri: picked.assets[0].uri }, "food");
+      }
+    } finally {
+      isPickingImageRef.current = false;
     }
   };
 
@@ -403,10 +446,11 @@ export default function AsistenteScreen() {
   const handleSend = async (text) => {
     const val = typeof text === "string" ? text : inputText;
     if (!val.trim() || isSending) return;
-    const time = new Date().toLocaleTimeString("es-PE", { hour: "numeric", minute: "2-digit" });
+    const trimmed = val.trim();
+    const time = formatChatTime();
     setMessages((prev) => [
       ...prev,
-      { id: Date.now().toString(), sender: "user", text: val.trim(), time },
+      { id: `local-user-${Date.now()}`, sender: "user", text: trimmed, time },
     ]);
     setInputText("");
     setIsSending(true);
@@ -414,27 +458,22 @@ export default function AsistenteScreen() {
 
     try {
       const { patientId } = await ensurePatientSession();
-      let aiText;
-      const isChange = /cambió|cambio|última visita/i.test(val);
-      if (isChange) {
-        const r = await whatChanged(patientId, "tu última visita");
-        const lines = (r.changes ?? []).map((c) => `${c.emoji ?? "•"} ${c.description}`).join("\n");
-        aiText = r.headline ? `${r.headline}\n\n${lines}` : lines || "Sin cambios registrados aún.";
-        if (r.next_action) aiText += `\n\n→ ${r.next_action}`;
-      } else {
-        const r = await answerQuestion(val, patientId);
-        aiText = r.answer ?? "No tengo suficiente información aún.";
-        if (r.next_action) aiText += `\n\n→ ${r.next_action}`;
-      }
+      const { assistantMessage } = await sendAssistantQuestion(trimmed, patientId);
       setMessages((prev) => [
         ...prev,
-        { id: (Date.now() + 1).toString(), sender: "ai", text: aiText, isList: false, time },
+        mapStoredAssistantMessage(assistantMessage),
       ]);
       setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
-    } catch {
+    } catch (error) {
       setMessages((prev) => [
         ...prev,
-        { id: (Date.now() + 1).toString(), sender: "ai", text: "No pude conectarme. Verifica tu conexión.", isList: false },
+        {
+          id: `local-ai-error-${Date.now()}`,
+          sender: "ai",
+          text: error?.message || "No pude conectarme. Verifica tu conexión.",
+          isList: false,
+          time: formatChatTime(),
+        },
       ]);
     } finally {
       setIsSending(false);
