@@ -9,8 +9,8 @@
 import { describeImage, extractDocumentText } from './embeddingService';
 import { analyzeMealText } from './nutritionService';
 import { inferAudioFileName } from './audioRecordingService';
-import { ensureSupabaseSession } from './patientSessionService';
-import { supabase } from './supabaseClient';
+import { generateStructuredJsonWithOpenAI } from './openaiResponsesService';
+import { CONFIG } from './config';
 
 // ─── Text ──────────────────────────────────────────────────────────────────────
 
@@ -166,97 +166,110 @@ export async function processDocument(fileUri, mimeType) {
 // ─── Audio ─────────────────────────────────────────────────────────────────────
 
 /**
- * Process an audio note:
- * 1. Supabase Edge Function → OpenAI transcription + clinical summary
- * 2. Returns transcript text for embedding and downstream storage
+ * Process an audio note directly via OpenAI:
+ * 1. gpt-4o-transcribe → Spanish transcript
+ * 2. Responses API → structured clinical summary in Spanish
+ * 3. Returns transcript + clinicalSummary for embedding and downstream storage
  */
 export async function processAudio(audioUri, mimeType = 'audio/m4a') {
   if (!audioUri) {
     throw new Error('No se encontró el archivo de audio para transcribir.');
   }
 
-  const invokeAudioIntake = async () => {
-    const formData = new FormData();
-    formData.append('file', {
-      uri: audioUri,
-      type: mimeType,
-      name: inferAudioFileName(mimeType),
-    });
-    formData.append('language', 'es');
-
-    return supabase.functions.invoke('audio-intake', {
-      body: formData,
-    });
-  };
-
-  const resolveErrorMessage = async (error, response) => {
-    let message = 'No se pudo transcribir el audio en este momento.';
-
-    try {
-      const contentType = response?.headers?.get?.('Content-Type') ?? '';
-      if (contentType.includes('application/json')) {
-        const payload = await response.json();
-        if (typeof payload?.message === 'string' && payload.message.trim()) {
-          message = payload.message.trim();
-        }
-      } else {
-        const rawText = await response?.text?.();
-        if (rawText?.trim()) {
-          message = rawText.trim();
-        }
-      }
-    } catch {
-      // fall through to generic error extraction
-    }
-
-    if (message === 'No se pudo transcribir el audio en este momento.' && error?.message) {
-      message = error.message;
-    }
-
-    const isInvalidJwt = /invalid jwt/i.test(message);
-
-    return {
-      isInvalidJwt,
-      message: isInvalidJwt
-        ? 'No se pudo validar la sesión de Supabase. Reinicia la app y vuelve a intentar. Si continúa, recompila la app con las variables de entorno actualizadas.'
-        : message,
-    };
-  };
-
-  let { data, error, response } = await invokeAudioIntake();
-
-  if (error) {
-    let { message, isInvalidJwt } = await resolveErrorMessage(error, response);
-
-    if (isInvalidJwt) {
-      await ensureSupabaseSession();
-      ({ data, error, response } = await invokeAudioIntake());
-
-      if (!error) {
-        message = '';
-      } else {
-        ({ message } = await resolveErrorMessage(error, response));
-      }
-    }
-
-    if (error) {
-      throw new Error(message);
-    }
+  if (!CONFIG.openai?.apiKey) {
+    throw new Error('Falta la clave de OpenAI. Configura EXPO_PUBLIC_OPENAI_API_KEY.');
   }
 
-  const transcript = typeof data?.transcript === 'string' ? data.transcript.trim() : '';
-  if (!transcript) {
+  // Step 1: Transcribe with gpt-4o-transcribe
+  const formData = new FormData();
+  formData.append('file', {
+    uri: audioUri,
+    type: mimeType,
+    name: inferAudioFileName(mimeType),
+  });
+  formData.append('model', 'gpt-4o-transcribe');
+  formData.append('language', 'es');
+  formData.append(
+    'prompt',
+    'Nota clínica de paciente diabético. Puede incluir valores de glucosa, medicamentos, síntomas, comidas o instrucciones médicas.'
+  );
+
+  const transcribeRes = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${CONFIG.openai.apiKey}` },
+    body: formData,
+  });
+
+  if (!transcribeRes.ok) {
+    const errBody = await transcribeRes.text().catch(() => '');
+    throw new Error(`Error al transcribir el audio (${transcribeRes.status}): ${errBody}`);
+  }
+
+  const { text: transcript } = await transcribeRes.json();
+  if (!transcript?.trim()) {
     throw new Error('La transcripción llegó vacía. Intenta grabar de nuevo.');
   }
 
+  // Step 2: Clinical summary in Spanish via Responses API
+  let clinicalSummary = null;
+  try {
+    clinicalSummary = await generateStructuredJsonWithOpenAI({
+      prompt: `Analiza esta nota de voz de un paciente diabético y extrae los hallazgos clínicos clave.\n\nTranscripción:\n${transcript}`,
+      instructions:
+        'Eres un asistente clínico especializado en diabetes. Responde siempre en español. Extrae solo información explícitamente mencionada en la transcripción.',
+      schemaName: 'audio_clinical_summary',
+      schema: {
+        type: 'object',
+        properties: {
+          summary: { type: 'string', description: 'Resumen en 1-2 oraciones de la nota de voz en español' },
+          key_findings: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Hallazgos clínicos importantes en español',
+          },
+          glucose_readings_mentioned: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Valores de glucosa mencionados (ej. "154 mg/dl en ayunas")',
+          },
+          medications_mentioned: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Medicamentos o cambios de dosis mencionados',
+          },
+          symptoms_mentioned: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Síntomas o molestias reportadas',
+          },
+          doctor_instructions: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Instrucciones médicas mencionadas',
+          },
+          follow_up_actions: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Acciones de seguimiento recomendadas en español',
+          },
+        },
+        required: ['summary', 'key_findings', 'glucose_readings_mentioned', 'medications_mentioned', 'symptoms_mentioned', 'doctor_instructions', 'follow_up_actions'],
+        additionalProperties: false,
+      },
+      maxOutputTokens: 512,
+    });
+  } catch (summaryErr) {
+    console.warn('[processAudio] Clinical summary failed (non-fatal):', summaryErr.message);
+  }
+
   return {
-    contentText: transcript,
+    contentText: transcript.trim(),
     contentKind: 'audio_transcript',
-    clinicalSummary: data?.clinicalSummary ?? null,
+    clinicalSummary,
     metadata: {
       source_type: 'transcript',
       content_kind: 'audio_transcript',
-      content_text: transcript,
+      content_text: transcript.trim(),
       date: new Date().toISOString(),
     },
   };
