@@ -9,10 +9,20 @@ import {
   Modal,
   ActivityIndicator,
   TextInput,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+
+function useSafeTabBarHeight() {
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return useBottomTabBarHeight();
+  } catch {
+    return Platform.OS === 'web' ? 0 : 90;
+  }
+}
 import {
   Activity,
   AlertTriangle,
@@ -156,7 +166,7 @@ const INITIAL_TASK_GROUPS = [
 
 export default function MiSaludScreen() {
   const router = useRouter();
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = useSafeTabBarHeight();
   const [activeTab, setActiveTab] = useState('symptoms');
   const [medications, setMedications] = useState(INITIAL_MEDICATIONS);
   const [taskGroups, setTaskGroups] = useState(INITIAL_TASK_GROUPS);
@@ -178,9 +188,10 @@ export default function MiSaludScreen() {
   const [newSymptomText, setNewSymptomText] = useState("");
 
   const handleTabChange = (key) => {
-    Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
+    const nativeDriver = Platform.OS !== 'web';
+    Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: nativeDriver }).start(() => {
       setActiveTab(key);
-      Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+      Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: nativeDriver }).start();
     });
   };
 

@@ -9,9 +9,19 @@ import {
   Modal,
   ActivityIndicator,
   Dimensions,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+
+function useSafeTabBarHeight() {
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return useBottomTabBarHeight();
+  } catch {
+    return Platform.OS === 'web' ? 0 : 90;
+  }
+}
 import {
   AlertTriangle,
   ArrowRight,
@@ -91,7 +101,7 @@ const INITIAL_ACTIONS = [
 ];
 
 export default function PlanScreen() {
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = useSafeTabBarHeight();
   
   const [actions, setActions] = useState(INITIAL_ACTIONS);
   const [isCheckinLoading, setIsCheckinLoading] = useState(false);
@@ -105,15 +115,16 @@ export default function PlanScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    const nativeDriver = Platform.OS !== 'web';
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: nativeDriver }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: nativeDriver }),
     ]).start();
 
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.02, duration: 1200, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1.02, duration: 1200, useNativeDriver: nativeDriver }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 1200, useNativeDriver: nativeDriver }),
       ])
     ).start();
   }, []);

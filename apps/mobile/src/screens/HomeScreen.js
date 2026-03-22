@@ -15,6 +15,15 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+
+function useSafeTabBarHeight() {
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return useBottomTabBarHeight();
+  } catch {
+    return Platform.OS === 'web' ? 0 : 90;
+  }
+}
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
@@ -367,7 +376,7 @@ function ComposerModal({
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const tabBarHeight = useBottomTabBarHeight();
+  const tabBarHeight = useSafeTabBarHeight();
   const scrollRef = useRef(null);
   const otherInputRef = useRef(null);
   const feedbackOpacity = useRef(new Animated.Value(0)).current;
@@ -415,14 +424,14 @@ export default function HomeScreen() {
     Animated.timing(feedbackOpacity, {
       toValue: 1,
       duration: 180,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== 'web',
     }).start();
 
     feedbackTimerRef.current = setTimeout(() => {
       Animated.timing(feedbackOpacity, {
         toValue: 0,
         duration: 180,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start(({ finished }) => {
         if (finished) {
           setFeedback(null);
@@ -487,19 +496,19 @@ export default function HomeScreen() {
         toValue: 0.96,
         friction: 5,
         tension: 220,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.spring(medButtonScale, {
         toValue: 1.04,
         friction: 5,
         tension: 220,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.spring(medButtonScale, {
         toValue: 1,
         friction: 5,
         tension: 220,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
     ]).start();
 
