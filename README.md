@@ -284,11 +284,7 @@ npx supabase db push
 - [ ] OpenFDA medication safety lookup
 - [ ] Full Auth hardening + Row Level Security audit
 
----
 
-## Team
-
-Built with ❤️ for [hackathon name] by **PatricRc**.
 
 ---
 
