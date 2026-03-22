@@ -197,6 +197,7 @@ export async function describeImage(localUri, prompt = 'Describe the food items 
       prompt,
       base64,
       mimeType,
+      detail: 'auto',
       maxOutputTokens: 512,
     });
   }
@@ -239,6 +240,10 @@ function inferImageMimeType(localUri) {
 
   if (normalizedUri.endsWith('.webp')) {
     return 'image/webp';
+  }
+
+  if (normalizedUri.endsWith('.gif')) {
+    return 'image/gif';
   }
 
   if (normalizedUri.endsWith('.heic')) {
@@ -341,6 +346,7 @@ export async function extractDocumentText(localUri, mimeType) {
       prompt,
       base64,
       mimeType,
+      detail: 'high',
       maxOutputTokens: 2048,
     });
   }

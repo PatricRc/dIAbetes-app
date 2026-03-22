@@ -2,6 +2,12 @@ import { CONFIG } from './config';
 
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
 const DEFAULT_RESPONSES_MODEL = CONFIG.openai.visionModel || 'gpt-4.1-mini';
+const OPENAI_VISION_MIME_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
+]);
 
 function ensureOpenAIApiKey() {
   if (!CONFIG.openai.apiKey) {
@@ -62,6 +68,7 @@ function buildInput(prompt, image) {
       {
         type: 'input_image',
         image_url: `data:${image.mimeType};base64,${image.base64}`,
+        detail: image.detail ?? 'auto',
       },
     ],
   }];
@@ -96,14 +103,21 @@ async function createOpenAIResponse({ model = DEFAULT_RESPONSES_MODEL, prompt, i
 }
 
 export function supportsOpenAIVisionMimeType(mimeType) {
-  return typeof mimeType === 'string' && mimeType.startsWith('image/');
+  return typeof mimeType === 'string' && OPENAI_VISION_MIME_TYPES.has(mimeType.toLowerCase());
 }
 
-export async function generateVisionTextWithOpenAI({ prompt, base64, mimeType, maxOutputTokens = 512, model = DEFAULT_RESPONSES_MODEL }) {
+export async function generateVisionTextWithOpenAI({
+  prompt,
+  base64,
+  mimeType,
+  detail = 'auto',
+  maxOutputTokens = 512,
+  model = DEFAULT_RESPONSES_MODEL,
+}) {
   const data = await createOpenAIResponse({
     model,
     prompt,
-    image: { base64, mimeType },
+    image: { base64, mimeType, detail },
     maxOutputTokens,
   });
 
