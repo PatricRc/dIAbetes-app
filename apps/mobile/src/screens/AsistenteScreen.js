@@ -271,6 +271,14 @@ export default function AsistenteScreen() {
         return;
       }
 
+      if (err?.code === "MICROPHONE_RECORDING_UNAVAILABLE") {
+        Alert.alert(
+          "Grabación no disponible",
+          "Esta build no incluye el módulo de grabación. Vuelve a compilar o reinstalar la app para habilitar las notas de voz."
+        );
+        return;
+      }
+
       Alert.alert("No se pudo grabar", "Ocurrió un problema al iniciar la grabación.");
     }
   };

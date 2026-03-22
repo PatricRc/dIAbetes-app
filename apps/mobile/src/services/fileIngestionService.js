@@ -8,8 +8,9 @@
 
 import { describeImage, extractDocumentText } from './embeddingService';
 import { analyzeMealText } from './nutritionService';
-import { CONFIG } from './config';
 import { inferAudioFileName } from './audioRecordingService';
+import { ensureSupabaseSession } from './patientSessionService';
+import { supabase } from './supabaseClient';
 
 // ─── Text ──────────────────────────────────────────────────────────────────────
 
@@ -49,12 +50,12 @@ export async function processText(text) {
 
 /**
  * Process a meal photo:
- * 1. Gemini Vision → food description
- * 2. Nutritionix → macros
+ * 1. Gemini Vision (with OpenAI fallback) → food description
+ * 2. Nutrition model (with OpenAI fallback) → macros
  * Returns contentText (for embedding) + nutritionData (for brain)
  */
 export async function processMealPhoto(imageUri) {
-  // Step 1: Gemini Vision — structured food identification
+  // Step 1: Vision model — structured food identification
   const VISION_PROMPT = `Eres un nutricionista clínico analizando una imagen para un paciente diabético.
 Examina la imagen con detalle y responde EXACTAMENTE con este formato (sin texto adicional):
 
@@ -84,7 +85,7 @@ CATEGORIA: sin_categoria`;
 
   const noFood = foodTitle.toLowerCase().includes('sin alimentos');
 
-  // Step 2: Nutritionix — get macros using ingredients or title as query
+  // Step 2: Nutrition model — get macros using ingredients or title as query
   let nutritionData = null;
   if (!noFood) {
     const nutritionQuery = ingredients && ingredients !== 'ninguno'
@@ -93,7 +94,7 @@ CATEGORIA: sin_categoria`;
     try {
       nutritionData = await analyzeMealText(nutritionQuery);
     } catch (e) {
-      console.warn('Nutritionix lookup failed:', e.message);
+      console.warn('Nutrition lookup failed:', e.message);
     }
   }
 
@@ -166,47 +167,92 @@ export async function processDocument(fileUri, mimeType) {
 
 /**
  * Process an audio note:
- * 1. OpenAI gpt-4o-transcribe → transcript
- * 2. Returns transcript text for clinical brain
+ * 1. Supabase Edge Function → OpenAI transcription + clinical summary
+ * 2. Returns transcript text for embedding and downstream storage
  */
 export async function processAudio(audioUri, mimeType = 'audio/m4a') {
-  const { apiKey, transcriptionModel } = CONFIG.openai;
-
   if (!audioUri) {
     throw new Error('No se encontró el archivo de audio para transcribir.');
   }
 
-  if (!apiKey) {
-    throw new Error('Falta configurar EXPO_PUBLIC_OPENAI_API_KEY para transcribir audio.');
+  const invokeAudioIntake = async () => {
+    const formData = new FormData();
+    formData.append('file', {
+      uri: audioUri,
+      type: mimeType,
+      name: inferAudioFileName(mimeType),
+    });
+    formData.append('language', 'es');
+
+    return supabase.functions.invoke('audio-intake', {
+      body: formData,
+    });
+  };
+
+  const resolveErrorMessage = async (error, response) => {
+    let message = 'No se pudo transcribir el audio en este momento.';
+
+    try {
+      const contentType = response?.headers?.get?.('Content-Type') ?? '';
+      if (contentType.includes('application/json')) {
+        const payload = await response.json();
+        if (typeof payload?.message === 'string' && payload.message.trim()) {
+          message = payload.message.trim();
+        }
+      } else {
+        const rawText = await response?.text?.();
+        if (rawText?.trim()) {
+          message = rawText.trim();
+        }
+      }
+    } catch {
+      // fall through to generic error extraction
+    }
+
+    if (message === 'No se pudo transcribir el audio en este momento.' && error?.message) {
+      message = error.message;
+    }
+
+    const isInvalidJwt = /invalid jwt/i.test(message);
+
+    return {
+      isInvalidJwt,
+      message: isInvalidJwt
+        ? 'No se pudo validar la sesión de Supabase. Reinicia la app y vuelve a intentar. Si continúa, recompila la app con las variables de entorno actualizadas.'
+        : message,
+    };
+  };
+
+  let { data, error, response } = await invokeAudioIntake();
+
+  if (error) {
+    let { message, isInvalidJwt } = await resolveErrorMessage(error, response);
+
+    if (isInvalidJwt) {
+      await ensureSupabaseSession();
+      ({ data, error, response } = await invokeAudioIntake());
+
+      if (!error) {
+        message = '';
+      } else {
+        ({ message } = await resolveErrorMessage(error, response));
+      }
+    }
+
+    if (error) {
+      throw new Error(message);
+    }
   }
 
-  // Build FormData for OpenAI audio transcription
-  const formData = new FormData();
-  formData.append('file', {
-    uri: audioUri,
-    type: mimeType,
-    name: inferAudioFileName(mimeType),
-  });
-  formData.append('model', transcriptionModel);
-  formData.append('language', 'es');
-  formData.append('response_format', 'text');
-
-  const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}` },
-    body: formData,
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`OpenAI transcription error: ${err}`);
+  const transcript = typeof data?.transcript === 'string' ? data.transcript.trim() : '';
+  if (!transcript) {
+    throw new Error('La transcripción llegó vacía. Intenta grabar de nuevo.');
   }
-
-  const transcript = await res.text();
 
   return {
     contentText: transcript,
     contentKind: 'audio_transcript',
+    clinicalSummary: data?.clinicalSummary ?? null,
     metadata: {
       source_type: 'transcript',
       content_kind: 'audio_transcript',

@@ -1,36 +1,22 @@
-import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
+import { AudioModule, RecordingPresets } from 'expo-audio';
 
-const RECORDING_AUDIO_MODE = {
-  allowsRecordingIOS: true,
-  playsInSilentModeIOS: true,
-  interruptionModeIOS: InterruptionModeIOS.DoNotMix,
-  interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
-  shouldDuckAndroid: true,
-  playThroughEarpieceAndroid: false,
-  staysActiveInBackground: false,
-};
+function createRecorder() {
+  const RecorderClass = AudioModule?.AudioRecorder;
 
-const PLAYBACK_AUDIO_MODE = {
-  allowsRecordingIOS: false,
-  playsInSilentModeIOS: true,
-  interruptionModeIOS: InterruptionModeIOS.DoNotMix,
-  interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
-  shouldDuckAndroid: true,
-  playThroughEarpieceAndroid: false,
-  staysActiveInBackground: false,
-};
+  if (!RecorderClass) {
+    const error = new Error('Audio recording is not available in this build.');
+    error.code = 'MICROPHONE_RECORDING_UNAVAILABLE';
+    throw error;
+  }
+
+  return new RecorderClass(RecordingPresets.HIGH_QUALITY);
+}
 
 export async function ensureMicrophonePermission() {
-  const current = await Audio.getPermissionsAsync();
-  if (current.granted) {
-    return current;
-  }
-
-  if (!current.canAskAgain) {
-    return current;
-  }
-
-  return Audio.requestPermissionsAsync();
+  const current = await AudioModule.getRecordingPermissionsAsync();
+  if (current.granted) return current;
+  if (!current.canAskAgain) return current;
+  return AudioModule.requestRecordingPermissionsAsync();
 }
 
 export async function startMicrophoneRecording() {
@@ -43,48 +29,37 @@ export async function startMicrophoneRecording() {
     throw error;
   }
 
-  await Audio.setAudioModeAsync(RECORDING_AUDIO_MODE);
+  await AudioModule.setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
 
   try {
-    const { recording } = await Audio.Recording.createAsync(
-      Audio.RecordingOptionsPresets.HIGH_QUALITY
-    );
-
-    return recording;
+    const recorder = createRecorder();
+    await recorder.prepareToRecordAsync();
+    recorder.record();
+    return recorder;
   } catch (error) {
     await resetAudioMode();
     throw error;
   }
 }
 
-export async function stopMicrophoneRecording(recording) {
-  if (!recording) {
-    return { uri: null, mimeType: 'audio/m4a' };
-  }
+export async function stopMicrophoneRecording(recorder) {
+  if (!recorder) return { uri: null, mimeType: 'audio/m4a' };
 
   try {
-    await recording.stopAndUnloadAsync();
-    const uri = recording.getURI();
-
-    return {
-      uri,
-      mimeType: inferAudioMimeType(uri),
-    };
+    await recorder.stop();
+    const uri = recorder.uri;
+    return { uri, mimeType: inferAudioMimeType(uri) };
   } finally {
     await resetAudioMode();
   }
 }
 
-export async function cancelMicrophoneRecording(recording) {
-  if (!recording) {
-    await resetAudioMode();
-    return;
-  }
-
+export async function cancelMicrophoneRecording(recorder) {
+  if (!recorder) { await resetAudioMode(); return; }
   try {
-    await recording.stopAndUnloadAsync();
+    await recorder.stop();
   } catch {
-    // Ignore teardown errors if recording never fully started.
+    // ignore teardown errors
   } finally {
     await resetAudioMode();
   }
@@ -92,45 +67,27 @@ export async function cancelMicrophoneRecording(recording) {
 
 export async function resetAudioMode() {
   try {
-    await Audio.setAudioModeAsync(PLAYBACK_AUDIO_MODE);
+    await AudioModule.setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
   } catch {
-    // Best effort cleanup.
+    // best effort cleanup
   }
 }
 
 export function inferAudioMimeType(uri = '') {
-  const normalizedUri = uri.toLowerCase();
-
-  if (normalizedUri.endsWith('.caf')) {
-    return 'audio/x-caf';
-  }
-
-  if (normalizedUri.endsWith('.3gp')) {
-    return 'audio/3gpp';
-  }
-
-  if (normalizedUri.endsWith('.aac')) {
-    return 'audio/aac';
-  }
-
-  if (normalizedUri.endsWith('.wav')) {
-    return 'audio/wav';
-  }
-
+  const u = uri.toLowerCase();
+  if (u.endsWith('.caf')) return 'audio/x-caf';
+  if (u.endsWith('.3gp')) return 'audio/3gpp';
+  if (u.endsWith('.aac')) return 'audio/aac';
+  if (u.endsWith('.wav')) return 'audio/wav';
   return 'audio/m4a';
 }
 
 export function inferAudioFileName(mimeType = 'audio/m4a') {
   switch (mimeType) {
-    case 'audio/x-caf':
-      return 'audio_note.caf';
-    case 'audio/3gpp':
-      return 'audio_note.3gp';
-    case 'audio/aac':
-      return 'audio_note.aac';
-    case 'audio/wav':
-      return 'audio_note.wav';
-    default:
-      return 'audio_note.m4a';
+    case 'audio/x-caf': return 'audio_note.caf';
+    case 'audio/3gpp':  return 'audio_note.3gp';
+    case 'audio/aac':   return 'audio_note.aac';
+    case 'audio/wav':   return 'audio_note.wav';
+    default:            return 'audio_note.m4a';
   }
 }

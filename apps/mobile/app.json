@@ -12,6 +12,10 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
     "ios": {
       "supportsTablet": true
     },
@@ -39,7 +43,7 @@
       ],
       "expo-document-picker",
       [
-        "expo-av",
+        "expo-audio",
         {
           "microphonePermission": "Permite que $(PRODUCT_NAME) acceda al micrófono para grabar notas de voz clínicas."
         }

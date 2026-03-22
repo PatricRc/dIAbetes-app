@@ -49,6 +49,20 @@ supabase secrets set \
   NUTRITIONIX_APP_KEY=...
 ```
 
+Deploy the audio transcription Edge Function after setting the secrets:
+
+```bash
+supabase functions deploy audio-intake
+```
+
+Optional model overrides for the function:
+
+```bash
+supabase secrets set \
+  OPENAI_TRANSCRIPTION_MODEL=gpt-4o-transcribe \
+  OPENAI_REASONING_MODEL=gpt-4o
+```
+
 ## Storage path convention
 
 All protected uploads should use this object key shape so the storage RLS policies can resolve patient ownership:

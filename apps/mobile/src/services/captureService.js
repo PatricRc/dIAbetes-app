@@ -22,7 +22,7 @@ import {
   processAudio,
 } from './fileIngestionService';
 import { analyzeMeal, assessGlucose } from './brains/metabolicBrain';
-import { summarizeDocument, summarizeTranscript } from './brains/clinicalBrain';
+import { summarizeDocument } from './brains/clinicalBrain';
 import { buildPatientContext } from './brains/memoryBrain';
 
 // ─── Main Entry Point ──────────────────────────────────────────────────────────
@@ -77,7 +77,14 @@ export async function processCapture({
       throw new Error(`Unknown capture type: ${type}`);
   }
 
-  const { contentText, contentKind, metadata, nutritionData, foodDescription } = ingested;
+  const {
+    contentText,
+    contentKind,
+    metadata,
+    nutritionData,
+    foodDescription,
+    clinicalSummary: ingestedClinicalSummary,
+  } = ingested;
 
   // ── Step 2: Save capture entry to Supabase ───────────────────────────────────
   const capturePayload = {
@@ -169,12 +176,11 @@ export async function processCapture({
   let clinicalSummary = null;
 
   try {
-    // Get patient context from Memory Brain for richer brain inputs
-    const patientContext = await buildPatientContext(patientId, contentText);
-
     if (type === 'meal_photo') {
+      const patientContext = await buildPatientContext(patientId, contentText);
       guidance = await analyzeMeal(nutritionData, foodDescription, patientContext);
     } else if (contentKind === 'glucose_note') {
+      const patientContext = await buildPatientContext(patientId, contentText);
       // Extract glucose value from text
       const match = contentText.match(/(\d{2,3})\s*(mg\/dl|mgdl)?/i);
       const value = match ? parseInt(match[1], 10) : null;
@@ -189,7 +195,18 @@ export async function processCapture({
         action: (clinicalSummary.follow_up_actions ?? [])[0] ?? 'Documento registrado en tu historial.',
       };
     } else if (type === 'audio') {
-      clinicalSummary = await summarizeTranscript(contentText);
+      const fallbackSummary =
+        contentText.length > 220 ? `${contentText.slice(0, 217).trim()}...` : contentText;
+
+      clinicalSummary = ingestedClinicalSummary ?? {
+        summary: fallbackSummary || 'Nota de voz registrada en tu historial.',
+        symptoms_mentioned: [],
+        medications_mentioned: [],
+        glucose_readings_mentioned: [],
+        doctor_instructions: [],
+        follow_up_actions: ['Revisa la transcripción guardada en tu historial.'],
+      };
+
       guidance = {
         recommendation: clinicalSummary.summary,
         action: (clinicalSummary.follow_up_actions ?? [])[0] ?? 'Nota de voz registrada en tu historial.',

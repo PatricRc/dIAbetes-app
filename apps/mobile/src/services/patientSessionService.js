@@ -3,6 +3,9 @@ import { supabase } from './supabaseClient';
 
 let sessionPromise = null;
 let patientPromise = null;
+let patientUserId = null;
+
+const SESSION_EXPIRY_MARGIN_MS = 60 * 1000;
 
 function requireDemoCredentials() {
   const { demoEmail, demoPassword } = CONFIG.supabase;
@@ -29,6 +32,36 @@ function formatDisplayName(user) {
   return cleaned || 'Paciente demo';
 }
 
+function isSessionFresh(session) {
+  if (!session?.user) {
+    return false;
+  }
+
+  if (typeof session.expires_at !== 'number') {
+    return true;
+  }
+
+  return session.expires_at * 1000 - Date.now() > SESSION_EXPIRY_MARGIN_MS;
+}
+
+async function signInWithDemoUser() {
+  const { demoEmail, demoPassword } = requireDemoCredentials();
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: demoEmail,
+    password: demoPassword,
+  });
+
+  if (error) {
+    throw new Error(`No se pudo iniciar sesión en Supabase: ${error.message}`);
+  }
+
+  if (!data.session?.user) {
+    throw new Error('Supabase no devolvió una sesión válida.');
+  }
+
+  return data.session;
+}
+
 export async function ensureSupabaseSession() {
   if (!sessionPromise) {
     sessionPromise = (async () => {
@@ -36,40 +69,40 @@ export async function ensureSupabaseSession() {
         data: { session: existingSession },
       } = await supabase.auth.getSession();
 
-      if (existingSession?.user) {
+      if (isSessionFresh(existingSession)) {
         return existingSession;
       }
 
-      const { demoEmail, demoPassword } = requireDemoCredentials();
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: demoEmail,
-        password: demoPassword,
-      });
+      if (existingSession?.refresh_token) {
+        const { data, error } = await supabase.auth.refreshSession({
+          refresh_token: existingSession.refresh_token,
+        });
 
-      if (error) {
-        throw new Error(`No se pudo iniciar sesión en Supabase: ${error.message}`);
+        if (!error && isSessionFresh(data.session)) {
+          return data.session;
+        }
+
+        console.warn('Supabase session refresh failed:', error?.message ?? 'Unknown error');
       }
 
-      if (!data.session?.user) {
-        throw new Error('Supabase no devolvió una sesión válida.');
-      }
-
-      return data.session;
-    })().catch((error) => {
-      sessionPromise = null;
-      throw error;
-    });
+      return signInWithDemoUser();
+    })();
   }
 
-  return sessionPromise;
+  try {
+    return await sessionPromise;
+  } finally {
+    sessionPromise = null;
+  }
 }
 
 export async function ensurePatientSession() {
-  if (!patientPromise) {
-    patientPromise = (async () => {
-      const session = await ensureSupabaseSession();
-      const user = session.user;
+  const session = await ensureSupabaseSession();
+  const user = session.user;
 
+  if (!patientPromise || patientUserId !== user.id) {
+    patientUserId = user.id;
+    patientPromise = (async () => {
       const { data: existingPatients, error: selectError } = await supabase
         .from('patients')
         .select('id, display_name')
@@ -113,6 +146,7 @@ export async function ensurePatientSession() {
       };
     })().catch((error) => {
       patientPromise = null;
+      patientUserId = null;
       throw error;
     });
   }

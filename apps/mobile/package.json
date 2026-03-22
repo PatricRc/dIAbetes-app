@@ -7,13 +7,15 @@
     "android": "expo start",
     "android:emulator": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build": "expo export --platform web",
+    "export:web": "expo export --platform web"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.3",
     "babel-preset-expo": "~54.0.10",
     "expo": "~54.0.0",
-    "expo-av": "^16.0.8",
+    "expo-audio": "~1.1.1",
     "expo-constants": "~18.0.13",
     "expo-document-picker": "^55.0.9",
     "expo-file-system": "^55.0.11",

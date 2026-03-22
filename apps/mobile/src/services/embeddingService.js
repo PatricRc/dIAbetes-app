@@ -1,6 +1,10 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import JSZip from 'jszip';
 import { CONFIG } from './config';
+import {
+  generateVisionTextWithOpenAI,
+  supportsOpenAIVisionMimeType,
+} from './openaiResponsesService';
 
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 const { apiKey, embeddingModel, embeddingDims } = CONFIG.gemini;
@@ -46,7 +50,7 @@ export async function embedText(text, taskType = 'RETRIEVAL_DOCUMENT') {
 export async function uploadFileToGemini(localUri, mimeType, displayName = 'capture') {
   // Read file as base64
   const base64 = await FileSystem.readAsStringAsync(localUri, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64',
   });
 
   // Convert base64 to binary for the multipart upload
@@ -151,39 +155,51 @@ export async function embedContent({
 
 /**
  * Use Gemini Vision to describe what's in an image.
- * Returns a plain-text description (used before Nutritionix lookup for meal photos).
+ * Falls back to OpenAI Responses vision if Gemini is unavailable (quota, etc.).
+ * Returns a plain-text description (used before nutrition lookup for meal photos).
  */
 export async function describeImage(localUri, prompt = 'Describe the food items in this image in detail.') {
   const base64 = await FileSystem.readAsStringAsync(localUri, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64',
   });
 
-  const mimeType = localUri.endsWith('.png') ? 'image/png' : 'image/jpeg';
+  const mimeType = inferImageMimeType(localUri);
 
-  const res = await fetch(
-    `${BASE_URL}/models/${CONFIG.gemini.visionModel}:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: prompt },
-            { inlineData: { mimeType, data: base64 } },
-          ],
-        }],
-        generationConfig: { maxOutputTokens: 512 },
-      }),
+  // ── Primary: Gemini Vision ──────────────────────────────────────────────────
+  try {
+    const res = await fetch(
+      `${BASE_URL}/models/${CONFIG.gemini.visionModel}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: prompt },
+              { inlineData: { mimeType, data: base64 } },
+            ],
+          }],
+          generationConfig: { maxOutputTokens: 512 },
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(`Gemini vision error: ${JSON.stringify(err)}`);
     }
-  );
 
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(`Gemini vision error: ${JSON.stringify(err)}`);
+    const data = await res.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+  } catch (geminiError) {
+    console.warn('[describeImage] Gemini failed, falling back to OpenAI:', geminiError.message);
+    return generateVisionTextWithOpenAI({
+      prompt,
+      base64,
+      mimeType,
+      maxOutputTokens: 512,
+    });
   }
-
-  const data = await res.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 }
 
 function decodeXmlEntities(text) {
@@ -214,13 +230,35 @@ function normalizeDocxXml(xml) {
   );
 }
 
+function inferImageMimeType(localUri) {
+  const normalizedUri = localUri.toLowerCase();
+
+  if (normalizedUri.endsWith('.png')) {
+    return 'image/png';
+  }
+
+  if (normalizedUri.endsWith('.webp')) {
+    return 'image/webp';
+  }
+
+  if (normalizedUri.endsWith('.heic')) {
+    return 'image/heic';
+  }
+
+  if (normalizedUri.endsWith('.heif')) {
+    return 'image/heif';
+  }
+
+  return 'image/jpeg';
+}
+
 function isDocxDocument(localUri, mimeType) {
   return mimeType === DOCX_MIME_TYPE || localUri.toLowerCase().endsWith('.docx');
 }
 
 async function extractDocxText(localUri) {
   const base64 = await FileSystem.readAsStringAsync(localUri, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64',
   });
 
   const zip = await JSZip.loadAsync(base64, { base64: true });
@@ -263,33 +301,47 @@ export async function extractDocumentText(localUri, mimeType) {
   }
 
   const base64 = await FileSystem.readAsStringAsync(localUri, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64',
   });
 
-  const res = await fetch(
-    `${BASE_URL}/models/${CONFIG.gemini.visionModel}:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            {
-              text: 'Extract all text from this medical document. Return the raw extracted text, preserving structure.',
-            },
-            { inlineData: { mimeType, data: base64 } },
-          ],
-        }],
-        generationConfig: { maxOutputTokens: 2048 },
-      }),
+  const prompt = 'Extract all text from this medical document. Return the raw extracted text, preserving structure.';
+
+  try {
+    const res = await fetch(
+      `${BASE_URL}/models/${CONFIG.gemini.visionModel}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: prompt },
+              { inlineData: { mimeType, data: base64 } },
+            ],
+          }],
+          generationConfig: { maxOutputTokens: 2048 },
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(`Gemini OCR error: ${JSON.stringify(err)}`);
     }
-  );
 
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(`Gemini OCR error: ${JSON.stringify(err)}`);
+    const data = await res.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+  } catch (geminiError) {
+    if (!supportsOpenAIVisionMimeType(mimeType)) {
+      throw geminiError;
+    }
+
+    console.warn('[extractDocumentText] Gemini failed, falling back to OpenAI:', geminiError.message);
+    return generateVisionTextWithOpenAI({
+      prompt,
+      base64,
+      mimeType,
+      maxOutputTokens: 2048,
+    });
   }
-
-  const data = await res.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 }
