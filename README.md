@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🩺 Diabetes Guardian
+# 🩺 dIAb
 
 ### Your AI-powered diabetes companion — capture anything, remember everything.
 
